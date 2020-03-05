@@ -12,9 +12,20 @@
  */
 
 #include <iostream>
-using namespace std;
+#include <process.h>
+#include <string.h>
+#include <stdio.h>
+#include <unistd.h>
+#include <stdlib.h>
+#include <errno.h>
+#include <sys/neutrino.h>
+#include <sys/netmgr.h>
+#include <sys/iofunc.h>
+#include <sys/dispatch.h>
+
+#include "../include/des.h"
 
 int main() {
-	cout << "Hello World!!!" << endl; // prints Hello World!!!
+	std::cout << "The controller is running as process_id: " << getpid() << std::endl;
 	return 0;
 }

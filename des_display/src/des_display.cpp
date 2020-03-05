@@ -10,9 +10,26 @@
  */
 
 #include <iostream>
-using namespace std;
+
+#include "../../des_controller/include/des.h"
 
 int main() {
-	cout << "Hello World!!!" << endl; // prints Hello World!!!
+
+	std::cout << "The display is running as process_id: " << getpid() << std::endl;
+	std::cout.flush();
 	return 0;
+}
+
+
+/**
+ * Prints out status information to the console each time a status update is sent
+ * to it using a message from the des_controller program
+ *
+ *TODO: Validate that cout is working on QNX - There has been some issues
+ * with the buffer not flushing properly. If that is the case, switch to printf
+ */
+void print_message(std::string message){
+	std::cout << "Message received: " << message << std::endl;
+	std::cout.flush();
+	//TODO: Implementation
 }
