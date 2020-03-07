@@ -11,7 +11,7 @@
 
 #include <iostream>
 
-#include "../../des_controller/include/des.h"
+#include "../../des_controller/src/des.h"
 
 int main() {
 

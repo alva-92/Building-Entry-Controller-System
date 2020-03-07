@@ -23,9 +23,59 @@
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
 
-#include "../include/des.h"
+#include "./des.h"
 
 int main() {
-	std::cout << "The controller is running as process_id: " << getpid() << std::endl;
+	serverpid = getpid();
+	std::cout << "The controller is running as process_id: " << serverpid << std::endl;
+	std::cout.flush();
+
+	send_msg_request_t* message_request;
+	response_msg_t      response_message;
+	char message[200]; /* Message object to receive and send data to client */
+
+    /* Create a channel for the client to connect to */
+    chid = ChannelCreate(0);
+    if (chid == -1)
+    {
+        perror("failed to create the channel.");
+        exit(EXIT_FAILURE);
+    }
+    /* Put server in an endless listening state */
+    while (1)
+    {
+    	/*
+    	 * Retrieve the message
+    	 * @params
+    	 * int chid
+    	 * void* rmsg - Pointer to received message object
+    	 * size_t rbytes
+    	 * struct _msg_info *info
+    	 */
+    	rcvid = MsgReceive(chid, (void*) message, sizeof(message), NULL);
+
+        if (rcvid == -1)
+        {
+        	printf("Could not parse message");
+        }
+
+        message_request = (send_msg_request_t*) message;
+
+        std::cout << "Got: " << message_request->person_id << " - " <<  message_request->instruction << std::endl;
+
+        /*
+         * rcvid  - The receive ID that MsgReceive*() returned when you received the message.
+         * status - The status to use when unblocking the MsgSend*() call in the rcvid thread.
+         * msg    - A pointer to a buffer that contains the message that you want to reply with.
+         * size   - The size of the message, in bytes.
+         */
+        MsgReply(rcvid, EOK, (void*) &response_message, sizeof(response_msg_t));
+    }
+
+								/* Phase 3 */
+
+    /* Destroy the channel when done */
+    ChannelDestroy(chid);
+
 	return 0;
 }
