@@ -5,7 +5,21 @@
 #define SRVR_UNDEFINED           1
 #define SRVR_INVALID_INSTRUCTION 2
 
-// TODO: Defines for each state
+
+// TODO: Might need to create a person object to fulfill requirements
+#define NUM_STATES 7
+
+typedef enum
+{
+	START_STATE = 0,
+	SCANNING_STATE = 1,
+	LOCKED_STATE = 2,
+	UNLOCKED_STATE = 3,
+	OPENED_STATE = 4,
+	WEIGHT_SCAN_STATE = 5,
+	CLOSED_STATE = 6,
+
+} State;
 
 /**
  * Stores the system status information
@@ -15,6 +29,7 @@ struct system_status {
 	int person_id;
 	int system_state;
 	int current_step; /* The current step where the person is in the process */
+	char message[128]; /* Message to be displayed to the console */
 
 } typedef system_status_t;
 
@@ -35,7 +50,7 @@ struct send_msg_request {
 struct response_msg {
 
 	int status_code; // [OK, UNDEFINED, INVALID_INSTRUCTION]
-	char message[128]; /* Message to be displayed to the console */
+	char message[128]; /* Message for the input process */ // TODO: Might not be needed as per requirements. Need to revisit this
 
 
 } typedef response_msg_t;
@@ -57,25 +72,5 @@ void *unlocked();
 void *opened();
 void *weight_scan();
 void *closed();
-
-class des_controller{
-
-public:
-
-
-	des_controller();
-
-	/* Getters */
-	pid_t get_server_pid();
-	// Other information that should be shared
-
-	/* Setter */
-	void set_server_pid();
-
-private:
-
-	// controller member variables - e.g. PID
-
-};
 
 #endif

@@ -34,7 +34,7 @@ void send_message(std::string inst, int id){
 	memset( &message_request, 0, sizeof(message_request));
 	memset( &resp_msg, 0, sizeof(resp_msg));
 
-	message_request.person_id = 0;
+	message_request.person_id = id;
 	strcpy(message_request.instruction, inst.c_str());
 
 	/* Establish a connection */
@@ -81,6 +81,9 @@ void send_message(std::string inst, int id){
 
 	response_message = (response_msg_t*) resp_msg;
 
+	std::cout << "Input got response: " << response_message->status_code << std::endl;
+	std::cout.flush();
+
 }
 
 void process_input(std::string in){
@@ -89,11 +92,11 @@ void process_input(std::string in){
 	std::cout.flush();
 
 	// TODO: Implementation - Status checks before sending the message
-	// TODO: e.g. Checks if we have a process ID, update what stage we are at
-	// TOOD: for the system status struct
-	if (system_status.person_id == 0){
-		std::cout << "Not scanned yet" << std::endl;
+	if (in == "ls"){
+		std::cout << "Enter the Person's ID:" << std::endl;
 		std::cout.flush();
+		// Get the id
+		system_status.person_id = 50;
 	}
 	// If everything is good
 	send_message(in , system_status.person_id);

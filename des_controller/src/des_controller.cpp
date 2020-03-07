@@ -25,9 +25,81 @@
 
 #include "./des.h"
 
-int main() {
-	serverpid = getpid();
-	std::cout << "The controller is running as process_id: " << serverpid << std::endl;
+void send_message(std::string msg){
+
+	std::cout << "Sending message to display proces: " << msg << std::endl;
+	std::cout.flush();
+	system_status_t system_message;    /* Struct to be sent to the server */
+	char resp_msg [200]; 		     /* Response message buffer */
+	int  coid;
+	response_msg_t* response_message;
+
+	/* Clear the memory for the message and the response */
+	memset( &system_message, 0, sizeof(system_message));
+	memset( &resp_msg, 0, sizeof(resp_msg));
+
+	system_message.person_id = 123456;
+	strcpy(system_message.message , msg.c_str());
+
+	/* Establish a connection */
+
+	/*
+	 * @params
+	 * nd The node descriptor of the node (e.g. ND_LOCAL_NODE for the local node) on which the process that owns the channel is running; see “Node descriptors,” below.
+	 * pid The process ID of the owner of the channel. If pid is zero, the calling process is assumed.
+	 * chid The channel ID, returned by ChannelCreate(), of the channel to connect to the process.
+	 * index The lowest acceptable connection ID.
+	 * flags If flags contains _NTO_COF_CLOEXEC, the connection is closed when your process calls an exec
+	 */
+	coid = ConnectAttach(ND_LOCAL_NODE, serverpid , 1, _NTO_SIDE_CHANNEL, 0);
+	if (coid == -1)
+	{
+		printf("\n Could not attach to channel running on: %d", serverpid);
+		exit(EXIT_FAILURE);
+	}
+
+    /* Send the message */
+    int size = sizeof(send_msg_request_t);
+    char buffer[size]; /* For testing, sending the struct as a buffer to the server */
+
+    memcpy(buffer, &system_message, sizeof(response_msg_t));
+
+    /* Send the message */
+
+	/*
+     * @params
+     * the connection ID of the target server (coid),
+     * a pointer to the send message (smsg),
+     * the size of the send message (sbytes),
+     * a pointer to the reply message (rmsg), and
+     * the size of the reply message (rbytes).
+     */
+	if (MsgSend(coid, &system_message, sizeof(system_message), resp_msg, sizeof(response_msg_t)) == -1)
+	{
+		std::cout << "Failed to send the message" << std::endl;
+		std::cout.flush();
+		exit(EXIT_FAILURE);
+	}
+
+	response_message = (response_msg_t*) resp_msg;
+
+	/* Disconnect from the channel */
+	ConnectDetach(coid);
+}
+
+int main(int argc, char* argv[]) {
+
+	/* Validate the number of command line arguments as per requirements */
+	if (argc != 2)
+	{
+		// TODO: Check that argument is a process PID
+		std::cout << "Server PID is required" << std::endl;
+		std::cout.flush();
+		exit(EXIT_FAILURE);
+	}
+
+	serverpid = atoi(argv[1]);
+	std::cout << "The controller is running as process_id: " << getpid() << std::endl;
 	std::cout.flush();
 
 	send_msg_request_t* message_request;
@@ -61,8 +133,12 @@ int main() {
 
         message_request = (send_msg_request_t*) message;
 
-        std::cout << "Got: " << message_request->person_id << " - " <<  message_request->instruction << std::endl;
+        std::cout << "Controller Got: " << message_request->person_id << " - " <<  message_request->instruction << std::endl;
+        std::cout.flush();
 
+        /* Respond to input */
+
+        response_message.status_code = SRVR_OK;
         /*
          * rcvid  - The receive ID that MsgReceive*() returned when you received the message.
          * status - The status to use when unblocking the MsgSend*() call in the rcvid thread.
@@ -70,6 +146,12 @@ int main() {
          * size   - The size of the message, in bytes.
          */
         MsgReply(rcvid, EOK, (void*) &response_message, sizeof(response_msg_t));
+
+        /* Send message to display */
+        // TODO: Pre-define the messages and map to them based on the instruction e.g. inst: 'ls' mapped to 'left door scan' for example
+        std::string message = "User sent: " + std::string(message_request->instruction);
+        send_message(message);
+
     }
 
 								/* Phase 3 */
