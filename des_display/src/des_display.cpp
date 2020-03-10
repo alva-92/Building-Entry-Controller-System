@@ -64,6 +64,8 @@ int main() {
         std::cout << "Display: " << message_request->person_id << std::endl;
         std::cout.flush();
 
+        response_message.status_code = SRVR_OK;
+
         /*
          * rcvid  - The receive ID that MsgReceive*() returned when you received the message.
          * status - The status to use when unblocking the MsgSend*() call in the rcvid thread.

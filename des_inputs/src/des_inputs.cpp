@@ -23,16 +23,7 @@
 #include "../../des_controller/src/des.h"
 
 
-void send_message(int input){
-
-	/* Prepare the message */
-	send_msg_request_t msg_req;    /* Struct to be sent to the server */
-	response_msg_t* response_message;
-
-	/* Clear the memory for the message and the response */
-	memset( &msg_req, 0, sizeof(send_msg_request_t));
-	memset( &response_message, 0, sizeof(response_msg_t));
-
+void send_message(send_msg_request_t& msg_req, response_msg_t* response_message){
 
 	/* Establish a connection */
 	int  coid;
@@ -89,6 +80,15 @@ void send_message(int input){
 
 void process_input(std::string in){
 
+	/* Prepare the message */
+	send_msg_request_t msg_req;    /* Struct to be sent to the server */
+	/* Clear the memory for the message */
+	memset( &msg_req, 0, sizeof(send_msg_request_t));
+
+	response_msg_t* response_message;
+
+	//memset( response_message, 0, sizeof(response_msg_t));
+
 	int inst_code = -1;
 
 	// TODO: Update all other status codes e.g. rc, ws and validate data
@@ -104,7 +104,7 @@ void process_input(std::string in){
 
 	//message_request.instruction = inst_code;
 
-	send_message(inst_code);
+	send_message(msg_req, response_message);
 }
 
 int main(int argc, char* argv[]) {

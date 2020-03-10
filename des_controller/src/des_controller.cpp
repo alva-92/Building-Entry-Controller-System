@@ -85,6 +85,9 @@ void send_message(std::string msg){
 
 	response_message = (response_msg_t*) resp_msg;
 
+	std::cout << "Controller got response: " << response_message->status_code << std::endl;
+	std::cout.flush();
+
 	/* Disconnect from the channel */
 	ConnectDetach(coid);
 }
