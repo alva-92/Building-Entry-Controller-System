@@ -7,17 +7,50 @@
 
 
 // TODO: Might need to create a person object to fulfill requirements
+
+#define NUM_INPUTS 11
 #define NUM_STATES 7
 
 typedef enum
 {
-	START_STATE = 0,
-	SCANNING_STATE = 1,
-	LOCKED_STATE = 2,
-	UNLOCKED_STATE = 3,
-	OPENED_STATE = 4,
+	LS = 0,
+	RS,
+	WS,
+	LO,
+	RO,
+	LC,
+	RC,
+	GLU,
+	GRU,
+	GRL,
+	GLL,
+
+} Input;
+
+const char* INSTRUCTIONS[NUM_INPUTS] = {
+		"ls",
+		"rs",
+		"ws",
+		"lo",
+		"ro",
+		"lc",
+		"rc",
+		"gru",
+		"grl",
+		"gll",
+		"glu"
+};
+
+
+typedef enum
+{
+	START_STATE       = 0,
+	SCANNING_STATE    = 1,
+	LOCKED_STATE      = 2,
+	UNLOCKED_STATE    = 3,
+	OPENED_STATE      = 4,
 	WEIGHT_SCAN_STATE = 5,
-	CLOSED_STATE = 6,
+	CLOSED_STATE      = 6,
 
 } State;
 
@@ -40,7 +73,7 @@ struct send_msg_request {
 
 	// Who is sending the instruction? What Instruction (ls, rs, etc.)
 	int person_id;
-	char instruction[128];
+	int instruction;
 
 } typedef send_msg_request_t;
 

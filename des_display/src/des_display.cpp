@@ -29,9 +29,9 @@ int main() {
 	std::cout << "The display is running as PID: " << getpid() << std::endl;
 	std::cout.flush();
 
-	system_status_t* message_request;
+	system_status_t*    message_request;
 	response_msg_t      response_message;
-	char message[200]; /* Message object to receive and send data to client */
+	char message[400]; /* Message object to receive and send data to client */
 
     /* Create a channel for the controller to connect to */
     chid = ChannelCreate(0);
@@ -61,7 +61,7 @@ int main() {
 
         message_request = (system_status_t*) message;
 
-        std::cout << "Display: " << message_request->message << std::endl;
+        std::cout << "Display: " << message_request->person_id << std::endl;
         std::cout.flush();
 
         /*

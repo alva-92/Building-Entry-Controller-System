@@ -22,25 +22,26 @@
 #include <sys/netmgr.h>
 #include <sys/iofunc.h>
 #include <sys/dispatch.h>
-
+#include <sys/uio.h>
+#include <limits.h>
 #include "./des.h"
 
 void send_message(std::string msg){
 
-	std::cout << "Sending message to display proces: " << msg << std::endl;
+	std::cout << "Sending message to display process: " << msg << std::endl;
 	std::cout.flush();
 	system_status_t system_message;    /* Struct to be sent to the server */
-	char resp_msg [200]; 		     /* Response message buffer */
+	char resp_msg [400]; 		     /* Response message buffer */
 	int  coid;
 	response_msg_t* response_message;
 
 
 	/* Clear the memory for the message and the response */
-	memset( &system_message, 0, sizeof(system_message));
-	memset( &resp_msg, 0, sizeof(resp_msg));
+	memset(&system_message, 0, sizeof(system_status_t));
+	memset(&resp_msg, 0, sizeof(resp_msg));
 
 	system_message.person_id = 123456;
-	strcpy(system_message.message , msg.c_str());
+	//strcpy(system_message.message , "Testing");//msg.c_str());
 
 	/* Establish a connection */
 
@@ -60,7 +61,7 @@ void send_message(std::string msg){
 	}
 
     /* Send the message */
-    int size = sizeof(send_msg_request_t);
+    int size = sizeof(system_status_t);
     char buffer[size]; /* For testing, sending the struct as a buffer to the server */
 
     memcpy(buffer, &system_message, sizeof(response_msg_t));
@@ -75,9 +76,9 @@ void send_message(std::string msg){
      * a pointer to the reply message (rmsg), and
      * the size of the reply message (rbytes).
      */
-	if (MsgSend(coid, &system_message, sizeof(system_message), resp_msg, sizeof(response_msg_t)) == -1)
+	if (MsgSend(coid, &system_message, sizeof(system_status_t), resp_msg, sizeof(response_msg_t)) == -1)
 	{
-		std::cout << "Failed to send the message" << std::endl;
+		std::cout << "Failed to send the message." << " Buffer size is:" <<sizeof(system_status_t) <<std::endl;
 		std::cout.flush();
 		exit(EXIT_FAILURE);
 	}
@@ -89,14 +90,6 @@ void send_message(std::string msg){
 }
 
 int main(int argc, char* argv[]) {
-
-    /* Set the function pointer to the function you want */
-
-	void (*funcPointer)();
-	funcPointer = start;
-    std::cout << "Calling function pointer\n";
-    /* Call the function pointer */
-    funcPointer();
 
 	/* Validate the number of command line arguments as per requirements */
 	if (argc != 2)
@@ -122,6 +115,16 @@ int main(int argc, char* argv[]) {
         perror("failed to create the channel.");
         exit(EXIT_FAILURE);
     }
+
+    /* Declare function pointer for handling states */
+	void (*funcPointer)();
+
+	/* Assign pointer to initial state */
+	funcPointer = &start;
+
+    /* Program is active and ready to listen for instructions */
+    funcPointer(); /* Update state to 'Start' */
+
     /* Put server in an endless listening state */
     while (1)
     {
@@ -146,12 +149,52 @@ int main(int argc, char* argv[]) {
         std::cout.flush();
 
         /* Respond to input */
-        /* GET FUNCTION POINTERS GOIN */
-        if(strcmp(message_request->instruction,"ls") == 0){
-        	std::cout << "assigning function pointer to scanning" << std::endl;
-        	std::cout.flush();
-        	funcPointer = scanning;
+        switch(message_request->instruction){
+        	case Input::LS:
+        	case Input::RS:
+				std::cout << "assigning function pointer to scanning" << std::endl;
+				std::cout.flush();
+				funcPointer = &scanning;
+				break;
+
+        	case Input::WS:
+				std::cout << "assigning function weight scan" << std::endl;
+				std::cout.flush();
+				funcPointer = &weight_scan;
+				break;
+
+        	case Input::LO:
+        	case Input::RO:
+				std::cout << "assigning function pointer to open" << std::endl;
+				std::cout.flush();
+				funcPointer = &opened;
+				break;
+
+        	case Input::LC:
+        	case Input::RC:
+				std::cout << "assigning function pointer to closed" << std::endl;
+				std::cout.flush();
+				funcPointer = &closed;
+				break;
+
+        	case Input::GLU:
+        	case Input::GRU:
+				std::cout << "assigning function pointer to guard unlocked" << std::endl;
+				std::cout.flush();
+				funcPointer = &unlocked;
+				break;
+
+        	case Input::GRL:
+        	case Input::GLL:
+				std::cout << "assigning function pointer to guard locked" << std::endl;
+				std::cout.flush();
+				funcPointer = &locked;
+				break;
+
         }
+
+
+        /* Update state */
         funcPointer();
 
         response_message.status_code = SRVR_OK;
@@ -165,7 +208,7 @@ int main(int argc, char* argv[]) {
 
         /* Send message to display */
         // TODO: Pre-define the messages and map to them based on the instruction e.g. inst: 'ls' mapped to 'left door scan' for example
-        std::string message = "User sent: " + std::string(message_request->instruction);
+        std::string message = "User sent: " + message_request->instruction;
         send_message(message);
 
     }
@@ -178,6 +221,8 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
+
+// TODO: These functions need either a person id or the system status to track id and instruction sent
 void start(){
 	std::cout << "Start function called\n";
 	std::cout.flush();
