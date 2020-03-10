@@ -65,12 +65,12 @@ int person_id;
 system_status_t system_status; /* Holds the status of the system - Shared among all programs */
 
 /* States */
-void *start();
-void *scanning();
-void *locked();
-void *unlocked();
-void *opened();
-void *weight_scan();
-void *closed();
+void start();
+void scanning();
+void locked();
+void unlocked();
+void opened();
+void weight_scan();
+void closed();
 
 #endif

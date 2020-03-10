@@ -34,6 +34,7 @@ void send_message(std::string msg){
 	int  coid;
 	response_msg_t* response_message;
 
+
 	/* Clear the memory for the message and the response */
 	memset( &system_message, 0, sizeof(system_message));
 	memset( &resp_msg, 0, sizeof(resp_msg));
@@ -89,6 +90,14 @@ void send_message(std::string msg){
 
 int main(int argc, char* argv[]) {
 
+    /* Set the function pointer to the function you want */
+
+	void (*funcPointer)();
+	funcPointer = start;
+    std::cout << "Calling function pointer\n";
+    /* Call the function pointer */
+    funcPointer();
+
 	/* Validate the number of command line arguments as per requirements */
 	if (argc != 2)
 	{
@@ -133,10 +142,17 @@ int main(int argc, char* argv[]) {
 
         message_request = (send_msg_request_t*) message;
 
-        std::cout << "Controller Got: " << message_request->person_id << " - " <<  message_request->instruction << std::endl;
+        std::cout << "Controller Got: " << message_request->person_id << " - " <<  message_request->instruction << " test "<< std::endl;
         std::cout.flush();
 
         /* Respond to input */
+        /* GET FUNCTION POINTERS GOIN */
+        if(strcmp(message_request->instruction,"ls") == 0){
+        	std::cout << "assigning function pointer to scanning" << std::endl;
+        	std::cout.flush();
+        	funcPointer = scanning;
+        }
+        funcPointer();
 
         response_message.status_code = SRVR_OK;
         /*
@@ -161,3 +177,39 @@ int main(int argc, char* argv[]) {
 
 	return 0;
 }
+
+void start(){
+	std::cout << "Start function called\n";
+	std::cout.flush();
+}
+
+void scanning(){
+	std::cout << "Scanning function called\n";
+	std::cout.flush();
+}
+
+void locked(){
+	std::cout << "Locked function called\n";
+	std::cout.flush();
+}
+
+void unlocked(){
+	std::cout << "Unlocked function called\n";
+	std::cout.flush();
+}
+
+void opened(){
+	std::cout << "Opened function called" << std::endl;
+	std::cout.flush();
+}
+
+void weight_scan(){
+	std::cout << "Weight Scan function called\n";
+	std::cout.flush();
+}
+
+void closed(){
+	std::cout << "Closed function called\n";
+	std::cout.flush();
+}
+
