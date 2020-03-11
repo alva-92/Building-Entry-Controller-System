@@ -24,14 +24,26 @@
 
 #include "../../des_controller/src/des.h"
 
+/**
+ * Prints out status information to the console each time a status update is sent
+ * to it using a message from the des_controller program
+ *
+ */
+void print_message(int* code){
+
+	// TODO: switch statement to map the code to the message
+	std::cout << "Display: " << *code << std::endl;
+	std::cout.flush();
+}
+
 int main() {
 
 	std::cout << "The display is running as PID: " << getpid() << std::endl;
 	std::cout.flush();
 
-	system_status_t*    message_request;
-	response_msg_t      response_message;
-	char message[400]; /* Message object to receive and send data to client */
+	int size = sizeof(int);
+	char message[size];     /* Message object to receive data from the controller */
+	int* code;
 
     /* Create a channel for the controller to connect to */
     chid = ChannelCreate(0);
@@ -59,42 +71,25 @@ int main() {
         	printf("Could not parse message");
         }
 
-        message_request = (system_status_t*) message;
-
-        std::cout << "Display: " << message_request->person_id << std::endl;
-        std::cout.flush();
-
-        response_message.status_code = SRVR_OK;
+        code = (int*) message;
+        //std::cout << "Display: " << *code << std::endl;
+        print_message(code);
 
         /*
-         * rcvid  - The receive ID that MsgReceive*() returned when you received the message.
-         * status - The status to use when unblocking the MsgSend*() call in the rcvid thread.
-         * msg    - A pointer to a buffer that contains the message that you want to reply with.
-         * size   - The size of the message, in bytes.
+         * No need to send any data back to the controller. Respond to unblock.
+         * This unblocks the client (but doesn't return any data) and returns the EOK “success” indication.
          */
-        MsgReply(rcvid, EOK, (void*) &response_message, sizeof(response_msg_t));
+        MsgError(rcvid, EOK);
+
+        /* Alternatively, you can unblock with regular reply and choose to not send
+         * data back. Standard shown in QNX documentation encourages MsgError for pass/fail responses */
+        //MsgReply (rcvid, EOK, NULL, 0);
     }
 
-	/* Phase 3 */
+										/* Phase 3 */
 
 	/* Destroy the channel when done */
-    std::cout << "Destroying display channel"<< std::endl;
-    std::cout.flush();
 	ChannelDestroy(chid);
 
 	return 0;
-}
-
-
-/**
- * Prints out status information to the console each time a status update is sent
- * to it using a message from the des_controller program
- *
- *TODO: Validate that cout is working on QNX - There has been some issues
- * with the buffer not flushing properly. If that is the case, switch to printf
- */
-void print_message(std::string message){
-	std::cout << "Message received: " << message << std::endl;
-	std::cout.flush();
-	//TODO: Implementation
 }

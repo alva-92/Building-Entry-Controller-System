@@ -26,24 +26,24 @@
 #include <limits.h>
 #include "./des.h"
 
-void send_message(std::string msg){
+/**
+ * This function sends a message to the display process.
+ * The display returns a pass or fail response.
+ */
+void send_message(int msg_code){
 
-	std::cout << "Sending message to display process: " << msg << std::endl;
+	std::cout << "Sending message code to display process: " << msg_code << std::endl;
 	std::cout.flush();
-	system_status_t system_message;    /* Struct to be sent to the server */
-	char resp_msg [400]; 		     /* Response message buffer */
-	int  coid;
-	response_msg_t* response_message;
 
+	int size = sizeof(int);
+	char message[size];
 
-	/* Clear the memory for the message and the response */
-	memset(&system_message, 0, sizeof(system_status_t));
-	memset(&resp_msg, 0, sizeof(resp_msg));
+	// TODO: Instead of sending a message, get a code that correlates to the message
+	// TODO: to be displayed. That will put the processing on the des_display and
+	// TODO: optimize the message passing by sending smaller messages (Smaller memory needed for both processes and smaller send buffer).
+	int message_code = msg_code;
 
-	system_message.person_id = 123456;
-	//strcpy(system_message.message , "Testing");//msg.c_str());
-
-	/* Establish a connection */
+					/* Establish a connection */
 
 	/*
 	 * @params
@@ -61,32 +61,22 @@ void send_message(std::string msg){
 	}
 
     /* Send the message */
-    int size = sizeof(system_status_t);
-    char buffer[size]; /* For testing, sending the struct as a buffer to the server */
-
-    memcpy(buffer, &system_message, sizeof(response_msg_t));
-
-    /* Send the message */
 
 	/*
      * @params
      * the connection ID of the target server (coid),
      * a pointer to the send message (smsg),
      * the size of the send message (sbytes),
-     * a pointer to the reply message (rmsg), and
-     * the size of the reply message (rbytes).
+     * a pointer to the reply message - Set to null if no need of a response message,
+     * the size of the reply message  - Set to 0 if not expecting response message.
      */
-	if (MsgSend(coid, &system_message, sizeof(system_status_t), resp_msg, sizeof(response_msg_t)) == -1)
+    //if (MsgSend(coid, &message, sizeof(message), NULL, 0) == -1)
+    if (MsgSend(coid, &message_code, sizeof(int), NULL, 0) == -1)
 	{
-		std::cout << "Failed to send the message." << " Buffer size is:" <<sizeof(system_status_t) <<std::endl;
+		std::cout << "Failed to send the message." << std::endl;
 		std::cout.flush();
 		exit(EXIT_FAILURE);
 	}
-
-	response_message = (response_msg_t*) resp_msg;
-
-	std::cout << "Controller got response: " << response_message->status_code << std::endl;
-	std::cout.flush();
 
 	/* Disconnect from the channel */
 	ConnectDetach(coid);
@@ -212,7 +202,7 @@ int main(int argc, char* argv[]) {
         /* Send message to display */
         // TODO: Pre-define the messages and map to them based on the instruction e.g. inst: 'ls' mapped to 'left door scan' for example
         std::string message = "User sent: " + message_request->instruction;
-        send_message(message);
+        send_message(9); // TODO: Depending the instruction we get we set this message code
 
     }
 
