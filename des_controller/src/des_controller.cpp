@@ -26,18 +26,18 @@
 #include <limits.h>
 #include "./des.h"
 
-void send_message(std::string msg){
+void send_message(std::string msg, system_status_t system_message){
 
 	std::cout << "Sending message to display process: " << msg << std::endl;
 	std::cout.flush();
-	system_status_t system_message;    /* Struct to be sent to the server */
+//	system_status_t system_message;    /* Struct to be sent to the server */
 	char resp_msg [400]; 		     /* Response message buffer */
 	int  coid;
 	response_msg_t* response_message;
 
 
 	/* Clear the memory for the message and the response */
-	memset(&system_message, 0, sizeof(system_status_t));
+//	memset(&system_message, 0, sizeof(system_status_t));
 	memset(&resp_msg, 0, sizeof(resp_msg));
 
 	system_message.person_id = 123456;
@@ -93,7 +93,6 @@ void send_message(std::string msg){
 }
 
 int main(int argc, char* argv[]) {
-
 	/* Validate the number of command line arguments as per requirements */
 	if (argc != 2)
 	{
@@ -106,6 +105,12 @@ int main(int argc, char* argv[]) {
 	serverpid = atoi(argv[1]);
 	std::cout << "The controller is running as process_id: " << getpid() << std::endl;
 	std::cout.flush();
+
+	system_status_t system_message;    /* Struct to be sent to the server */
+	/* Clear the memory for the message and the response */
+	memset(&system_message, 0, sizeof(system_status_t));
+	system_message.system_state = -1;
+	system_message.current_step = 0;
 
 	send_msg_request_t* message_request;
 	response_msg_t      response_message;
@@ -120,13 +125,13 @@ int main(int argc, char* argv[]) {
     }
 
     /* Declare function pointer for handling states */
-	void (*funcPointer)();
+    system_status_t (*funcPointer)(system_status_t);
 
 	/* Assign pointer to initial state */
 	funcPointer = &start;
 
     /* Program is active and ready to listen for instructions */
-    funcPointer(); /* Update state to 'Start' */
+    funcPointer(system_message); /* Update state to 'Start' */
 
     /* Put server in an endless listening state */
     while (1)
@@ -158,6 +163,7 @@ int main(int argc, char* argv[]) {
 				std::cout << "assigning function pointer to scanning" << std::endl;
 				std::cout.flush();
 				funcPointer = &scanning;
+				system_message.person_id = message_request->person_id;
 				break;
 
         	case Input::WS:
@@ -198,7 +204,9 @@ int main(int argc, char* argv[]) {
 
 
         /* Update state */
-        funcPointer();
+        std::cout << "system state = " << system_message.system_state << std::endl;
+        system_message = funcPointer(system_message);
+        std::cout << "system state = " << system_message.system_state << std::endl;
 
         response_message.status_code = SRVR_OK;
         /*
@@ -212,7 +220,7 @@ int main(int argc, char* argv[]) {
         /* Send message to display */
         // TODO: Pre-define the messages and map to them based on the instruction e.g. inst: 'ls' mapped to 'left door scan' for example
         std::string message = "User sent: " + message_request->instruction;
-        send_message(message);
+        send_message(message, system_message);
 
     }
 
@@ -226,38 +234,61 @@ int main(int argc, char* argv[]) {
 
 
 // TODO: These functions need either a person id or the system status to track id and instruction sent
-void start(){
+system_status_t start(system_status_t ss){
+
 	std::cout << "Start function called\n";
 	std::cout.flush();
+	ss.system_state = State::START_STATE;
+	return ss;
 }
 
-void scanning(){
+system_status_t scanning(system_status_t ss){
+	if(ss.current_step != 0){
+		std::cout << "You need to be on step 0 to use this command, exiting";
+		exit(0);
+	}
 	std::cout << "Scanning function called\n";
 	std::cout.flush();
+	ss.system_state = State::SCANNING_STATE;
+	return ss;
 }
 
-void locked(){
+system_status_t locked(system_status_t ss){
+	if(ss.current_step == 0){
+			std::cout << "You need to be on step 1 or 2 to use this command, exiting";
+			exit(0);
+		}
 	std::cout << "Locked function called\n";
 	std::cout.flush();
+	ss.system_state = State::LOCKED_STATE;
+	return ss;
 }
 
-void unlocked(){
+system_status_t unlocked(system_status_t ss){
 	std::cout << "Unlocked function called\n";
 	std::cout.flush();
+	ss.system_state = State::UNLOCKED_STATE;
+	return ss;
 }
 
-void opened(){
+system_status_t opened(system_status_t ss){
 	std::cout << "Opened function called" << std::endl;
 	std::cout.flush();
+	ss.system_state = State::OPENED_STATE;
+	return ss;
 }
 
-void weight_scan(){
+system_status_t weight_scan(system_status_t ss){
 	std::cout << "Weight Scan function called\n";
 	std::cout.flush();
+	ss.system_state = State::WEIGHT_SCAN_STATE;
+	return ss;
 }
 
-void closed(){
+system_status_t closed(system_status_t ss){
 	std::cout << "Closed function called\n";
 	std::cout.flush();
+	ss.system_state = State::CLOSED_STATE;
+	return ss;
 }
 

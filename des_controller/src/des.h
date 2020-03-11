@@ -14,16 +14,16 @@
 typedef enum
 {
 	LS = 0,
-	RS,
-	WS,
-	LO,
-	RO,
-	LC,
-	RC,
-	GLU,
-	GRU,
-	GRL,
-	GLL,
+	RS = 1,
+	WS = 2,
+	LO = 3,
+	RO = 4,
+	LC = 5,
+	RC = 6,
+	GLU = 7,
+	GRU = 8,
+	GRL = 9,
+	GLL = 10,
 
 } Input;
 
@@ -98,12 +98,12 @@ int person_id;
 system_status_t system_status; /* Holds the status of the system - Shared among all programs */
 
 /* States */
-void start();
-void scanning();
-void locked();
-void unlocked();
-void opened();
-void weight_scan();
-void closed();
+system_status_t start(system_status_t);
+system_status_t scanning(system_status_t);
+system_status_t locked(system_status_t);
+system_status_t unlocked(system_status_t);
+system_status_t opened(system_status_t);
+system_status_t weight_scan(system_status_t);
+system_status_t closed(system_status_t);
 
 #endif
