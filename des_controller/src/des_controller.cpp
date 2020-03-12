@@ -32,17 +32,9 @@
  */
 void send_message(std::string msg){
 
-	std::cout << "Preparing message to display process: " << msg
-			<< "Size: " << sizeof(msg)<< std::endl;
-	std::cout.flush();
-
 	char message[400];     /* Message object to send data from the display */
 	memset(&message, 0, sizeof(message));
 	strcpy(message, msg.c_str());
-
-	std::cout << "Sending message to display process: " << message
-			<< "Size: " << sizeof(message)<< std::endl;
-	std::cout.flush();
 
 					/* Establish a connection */
 
@@ -71,11 +63,24 @@ void send_message(std::string msg){
      * a pointer to the reply message - Set to null if no need of a response message,
      * the size of the reply message  - Set to 0 if not expecting response message.
      */
-    if (MsgSend(coid, &message, sizeof(message), NULL, 0) == -1)
+	int return_code = -1;
+	return_code = MsgSend(coid, &message, sizeof(message), NULL, 0);
+    if (return_code == -1)
 	{
 		std::cout << "Failed to send the message." << std::endl;
 		std::cout.flush();
 		exit(EXIT_FAILURE);
+	}
+	else if (return_code == 0)  /* Check that the message was transferred properly */
+	{
+		/* If display received a termination request terminate controller */
+
+		if (terminate)
+		{
+			std::cout << "Exiting Controller" << std::endl;
+			std::cout.flush();
+			exit(EXIT_SUCCESS);
+		}
 	}
 
 	/* Disconnect from the channel */
@@ -99,22 +104,13 @@ int main(int argc, char* argv[]) {
 
 	system_status_t     system_message;    /* Structure to hold the system information  */
 	send_msg_request_t* message_request;
-	response_msg_t      response_message;
 
 	/* Clear the memory for the message and the response */
 	memset(&system_message, 0, sizeof(system_status_t));
 	memset(&message_request, 0, sizeof(send_msg_request_t));
-	memset(&response_message, 0, sizeof(response_msg_t));
 
 	char message[400]; /* Message object to receive and send data to client */
 	memset(&message, 0, sizeof(message));
-
-
-	std::cout << "Preparing data structures for receiving data\n" <<
-			"Message: " << message
-			<< "Size: " << sizeof(message) <<
-			"\nSystem message size: "<< sizeof(system_status_t) << std::endl;
-	std::cout.flush();
 
 	/* Initialize system status */
 	system_message.system_state = -1;
@@ -136,12 +132,6 @@ int main(int argc, char* argv[]) {
 
     /* Program is active and ready to listen for instructions */
 	funcPointer(system_message); /* Update state to 'Start' */
-
-	std::cout << "Updated system message before start\n" <<
-			"Message: " << system_message.message
-			<< "Size: " << sizeof(system_message.message) <<
-			"\nSystem message size: "<< sizeof(system_message) << std::endl;
-	std::cout.flush();
 
     /* Send message to display to inform we are ready */
 	std::string msg = system_message.message;
@@ -167,9 +157,6 @@ int main(int argc, char* argv[]) {
 
         message_request = (send_msg_request_t*) message;
 
-        std::cout << "Controller Got: " << message_request->person_id << " - " <<  message_request->instruction << std::endl;
-        std::cout.flush();
-
         /* Respond to input */
         switch(message_request->instruction){
         	case Input::LS:
@@ -180,6 +167,7 @@ int main(int argc, char* argv[]) {
 
         	case Input::WS:
 				funcPointer = &weight_scan;
+				system_message.person_weight = message_request->extras;
 				break;
 
         	case Input::LO:
@@ -209,20 +197,23 @@ int main(int argc, char* argv[]) {
 				std::cout.flush();
 				funcPointer = &locked;
 				break;
+        	case Input::EXT:
+        		funcPointer = &exit_program;
+        		break;
         }
 
         /* Update state */
         funcPointer(system_message);
 
-        response_message.status_code = SRVR_OK;
-
         /*
-         * rcvid  - The receive ID that MsgReceive*() returned when you received the message.
-         * status - The status to use when unblocking the MsgSend*() call in the rcvid thread.
-         * msg    - A pointer to a buffer that contains the message that you want to reply with.
-         * size   - The size of the message, in bytes.
+         * No need to send any data back to the input. Respond to unblock.
+         * This unblocks the client (but doesn't return any data) and returns the EOK “success” indication.
          */
-        MsgReply(rcvid, EOK, (void*) &response_message, sizeof(response_msg_t));
+        MsgError(rcvid, EOK);
+
+        /* Alternatively, you can unblock with regular reply and choose to not send
+         * data back. Standard shown in QNX documentation encourages MsgError for pass/fail responses */
+        //MsgReply (rcvid, EOK, NULL, 0);
 
         /* Send message to display */
         send_message(system_message.message);
@@ -236,8 +227,6 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-
-// TODO: Pass as reference to optimize and not call copy constructors
 // TODO: Get messages from a header structure container all messages
 void start(system_status_t& ss){
 
@@ -252,7 +241,7 @@ void scanning(system_status_t& ss){
 		std::cout << "You need to be on step 0 to use this command, exiting";
 		exit(0);
 	}
-	std::string msg = "Scanning func - Person scanned ID. ID = " + std::to_string(ss.person_id);
+	std::string msg = "Person scanned ID. ID = " + std::to_string(ss.person_id);
 	strcpy(ss.message, msg.c_str());
 	ss.system_state = State::SCANNING_STATE;
 }
@@ -280,9 +269,7 @@ void opened(system_status_t& ss){
 }
 
 void weight_scan(system_status_t& ss){
-	std::cout << "Weight Scan function called\n";
-	std::cout.flush();
-	std::string msg = "Weight scanned";
+    std::string msg = "Person weighed, Weight = " + std::to_string(ss.person_weight);
 	strcpy(ss.message, msg.c_str());
 	ss.system_state = State::WEIGHT_SCAN_STATE;
 }
@@ -293,3 +280,9 @@ void closed(system_status_t& ss){
 	ss.system_state = State::CLOSED_STATE;
 }
 
+void exit_program(system_status_t& ss){
+	std::string msg = "Exit Display";
+	terminate = 1;
+	strcpy(ss.message, msg.c_str());
+	ss.system_state = State::EXIT_STATE;
+}

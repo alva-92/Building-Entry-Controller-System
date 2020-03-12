@@ -27,8 +27,6 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 
 	/* Establish a connection */
 	int  coid;
-	char resp_msg [400]; 		     /* Response message buffer */
-	memset( &resp_msg, 0, sizeof(resp_msg));
 
 	/*
 	 * @params
@@ -61,18 +59,24 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
      * a pointer to the reply message (rmsg), and
      * the size of the reply message (rbytes).
      */
-	if (MsgSend(coid, &msg_req, sizeof(send_msg_request_t), resp_msg, sizeof(response_msg_t)) == -1)
+    int return_code = -1;
+    return_code = MsgSend(coid, &msg_req, sizeof(send_msg_request_t), NULL, 0);
+	if (return_code == -1)
 	{
+		// TODO: For future - Check for other error return codes
 		std::cout << "Failed to send the message" << std::endl;
 		std::cout.flush();
 		exit(EXIT_FAILURE);
 	}
+	else if (return_code == 0)  /* Check that the message was transferred properly */
+	{
+		/* If controller received a termination request terminate input */
 
-	response_message = (response_msg_t*) resp_msg;
-
-	std::cout << "Input got response: " << response_message->status_code << std::endl;
-	std::cout.flush();
-
+		if (msg_req.instruction == Input::EXT)
+		{
+			terminate = 1;
+		}
+	}
 }
 
 void process_input(std::string in){
@@ -96,6 +100,9 @@ void process_input(std::string in){
 			inst_code = Input::RS;
 		}
 	}else if(in == "ws"){
+		std::cout << "Enter the Person's weight:" << std::endl;
+		std::cout.flush();
+		std::cin >> msg_req.extras;
 		inst_code = Input::WS;
 	}else if(in == "lo"){
 		inst_code = Input::LO;
@@ -113,6 +120,8 @@ void process_input(std::string in){
 		inst_code = Input::GRL;
 	}else if(in == "gll"){
 		inst_code = Input::GLL;
+	}else if(in == "exit" || in == "EXIT"){
+		inst_code = Input::EXT;
 	}
 
 	msg_req.instruction = inst_code;
@@ -132,19 +141,22 @@ int main(int argc, char* argv[]) {
 	}
 
 	serverpid = atoi(argv[1]);
-	std::cout << "Enter the type of event: e (ls= left scan, rs= right scan, "
-			"ws= weight scale, lo =left open, ro=right open, "
-			"lc =left closed, rc = right closed , "
-			"gru = guard right unlock, grl = guard right lock, "
-			"gll=guard left lock, "
-			"glu = guard Left unlock, exit = exit programs)" << std::endl;
 
-	std::cout.flush();
+	while (!terminate) {
+		std::cout << "Enter the event type: (ls = left scan, rs = right scan, "
+				"ws = weight scale, lo = left open, ro = right open, "
+				"lc = left closed, rc = right closed, "
+				"gru = guard right unlock, grl = guard right lock, "
+				"gll = guard left lock, "
+				"glu = guard Left unlock, exit = exit programs)" << std::endl;
 
-	std::string input;
-	std::cin >> input;
+		std::cout.flush();
 
-	process_input(input);
+		std::string input;
+		std::cin >> input;
+
+		process_input(input);
+	}
 	return 0;
 }
 

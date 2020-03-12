@@ -70,6 +70,11 @@ int main() {
         }
 
         // TODO: Remove the 'Display tag' once we are good/verified with provided screenshots
+        std::string m = "Exit Display";
+        if (m.compare(message)==0){
+        	terminate = 1;
+        }
+
         std::cout << "Display: " << message << std::endl;
         std::cout.flush();
 
@@ -82,6 +87,11 @@ int main() {
         /* Alternatively, you can unblock with regular reply and choose to not send
          * data back. Standard shown in QNX documentation encourages MsgError for pass/fail responses */
         //MsgReply (rcvid, EOK, NULL, 0);
+
+        if (terminate){
+        	// TODO: Cleanup structures if needed
+        	exit(EXIT_SUCCESS);
+        }
     }
 
 										/* Phase 3 */

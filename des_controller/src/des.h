@@ -8,8 +8,8 @@
 
 // TODO: Might need to create a person object to fulfill requirements
 
-#define NUM_INPUTS 11
-#define NUM_STATES 7
+#define NUM_INPUTS 12
+#define NUM_STATES 8
 
 typedef enum
 {
@@ -24,6 +24,7 @@ typedef enum
 	GRU = 8,
 	GRL = 9,
 	GLL = 10,
+	EXT = 11,
 
 } Input;
 
@@ -51,6 +52,7 @@ typedef enum
 	OPENED_STATE      = 4,
 	WEIGHT_SCAN_STATE = 5,
 	CLOSED_STATE      = 6,
+	EXIT_STATE        = 7,
 
 } State;
 
@@ -60,6 +62,7 @@ typedef enum
 struct system_status {
 
 	int person_id;
+	int person_weight;
 	int system_state;
 	int current_step; /* The current step where the person is in the process */
 	char message[128]; /* Message to be displayed to the console */
@@ -71,9 +74,9 @@ struct system_status {
  */
 struct send_msg_request {
 
-	// Who is sending the instruction? What Instruction (ls, rs, etc.)
 	int person_id;
 	int instruction;
+	int extras;  /* For this application it holds the weight of the person */
 
 } typedef send_msg_request_t;
 
@@ -93,6 +96,7 @@ int chid;  /* Holds the channel ID */
 int rcvid; /* Key to delimit where the message came from (client) */
 int coid;
 int person_id;
+int terminate; /* Set to 1 to terminate the program */
 
 // TODO: Encapsulate this so only the controller modifies it based on inputs
 system_status_t system_status; /* Holds the status of the system - Shared among all programs */
@@ -105,5 +109,5 @@ void unlocked(system_status_t&);
 void opened(system_status_t&);
 void weight_scan(system_status_t&);
 void closed(system_status_t&);
-
+void exit_program(system_status_t&);
 #endif
