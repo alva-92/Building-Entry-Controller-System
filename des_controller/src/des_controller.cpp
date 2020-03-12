@@ -210,7 +210,7 @@ int main(int argc, char* argv[]) {
         /* Send message to display */
         // TODO: Pre-define the messages and map to them based on the instruction e.g. inst: 'ls' mapped to 'left door scan' for example
         std::string message = "User sent: " + message_request->instruction;
-        send_message(message, system_message); // TODO: Replace message for int to adapt to new structure
+       // send_message(9, system_message); // TODO: Replace message for int to adapt to new structure
 
     }
 

@@ -1,1 +1,4 @@
 .metadata
+des_controller/build/*
+des_input/build/*
+des_display/build/*
