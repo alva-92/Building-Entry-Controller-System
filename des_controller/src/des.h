@@ -98,12 +98,12 @@ int person_id;
 system_status_t system_status; /* Holds the status of the system - Shared among all programs */
 
 /* States */
-system_status_t start(system_status_t);
-system_status_t scanning(system_status_t);
-system_status_t locked(system_status_t);
-system_status_t unlocked(system_status_t);
-system_status_t opened(system_status_t);
-system_status_t weight_scan(system_status_t);
-system_status_t closed(system_status_t);
+void start(system_status_t&);
+void scanning(system_status_t&);
+void locked(system_status_t&);
+void unlocked(system_status_t&);
+void opened(system_status_t&);
+void weight_scan(system_status_t&);
+void closed(system_status_t&);
 
 #endif

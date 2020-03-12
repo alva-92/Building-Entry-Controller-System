@@ -29,10 +29,9 @@
  * to it using a message from the des_controller program
  *
  */
-void print_message(int* code){
+void print_message(std::string msg){
 
-	// TODO: switch statement to map the code to the message
-	std::cout << "Display: " << *code << std::endl;
+	std::cout << "Display: " << msg << std::endl;
 	std::cout.flush();
 }
 
@@ -41,9 +40,7 @@ int main() {
 	std::cout << "The display is running as PID: " << getpid() << std::endl;
 	std::cout.flush();
 
-	int size = sizeof(int);
-	char message[size];     /* Message object to receive data from the controller */
-	int* code;
+	char message[400];     /* Message object to receive data from the controller */
 
     /* Create a channel for the controller to connect to */
     chid = ChannelCreate(0);
@@ -71,9 +68,9 @@ int main() {
         	printf("Could not parse message");
         }
 
-        code = (int*) message;
-        //std::cout << "Display: " << *code << std::endl;
-        print_message(code);
+        // TODO: Remove the 'Display tag' once we are good/verified with provided screenshots
+        std::cout << "Display: " << message << std::endl;
+        std::cout.flush();
 
         /*
          * No need to send any data back to the controller. Respond to unblock.

@@ -30,7 +30,6 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 	char resp_msg [200]; 		     /* Response message buffer */
 	memset( &resp_msg, 0, sizeof(resp_msg));
 
-	//msg_req.instruction = 7;
 	/*
 	 * @params
 	 * nd The node descriptor of the node (e.g. ND_LOCAL_NODE for the local node) on which the process that owns the channel is running; see “Node descriptors,” below.
@@ -39,8 +38,6 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 	 * index The lowest acceptable connection ID.
 	 * flags If flags contains _NTO_COF_CLOEXEC, the connection is closed when your process calls an exec
 	 */
-	std::cout << "Connecting to: " <<  serverpid << " Sending\n ID:" << msg_req.person_id << " Instruction: " << msg_req.instruction << std::endl;
-	std::cout.flush();
 	coid = ConnectAttach(ND_LOCAL_NODE, serverpid , 1, _NTO_SIDE_CHANNEL, 0);
 	if (coid == -1)
 	{
@@ -87,11 +84,8 @@ void process_input(std::string in){
 
 	response_msg_t* response_message;
 
-	//memset( response_message, 0, sizeof(response_msg_t));
-
 	int inst_code = -1;
 
-	// TODO: Update all other status codes e.g. rc, ws and validate data
 	if (in == "ls" || in == "rs"){
 		std::cout << "Enter the Person's ID:" << std::endl;
 		std::cout.flush();
@@ -123,8 +117,6 @@ void process_input(std::string in){
 
 	msg_req.instruction = inst_code;
 
-	//message_request.instruction = inst_code;
-
 	send_message(msg_req, response_message);
 }
 
@@ -145,7 +137,8 @@ int main(int argc, char* argv[]) {
 			"lc =left closed, rc = right closed , "
 			"gru = guard right unlock, grl = guard right lock, "
 			"gll=guard left lock, "
-			"glu = guard Left unlock)" << std::endl;
+			"glu = guard Left unlock, exit = exit programs)" << std::endl;
+
 	std::cout.flush();
 
 	std::string input;
