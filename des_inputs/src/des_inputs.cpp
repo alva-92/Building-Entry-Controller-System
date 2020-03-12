@@ -30,7 +30,7 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 	char resp_msg [200]; 		     /* Response message buffer */
 	memset( &resp_msg, 0, sizeof(resp_msg));
 
-	msg_req.instruction = 7;
+	//msg_req.instruction = 7;
 	/*
 	 * @params
 	 * nd The node descriptor of the node (e.g. ND_LOCAL_NODE for the local node) on which the process that owns the channel is running; see “Node descriptors,” below.
@@ -95,12 +95,33 @@ void process_input(std::string in){
 	if (in == "ls" || in == "rs"){
 		std::cout << "Enter the Person's ID:" << std::endl;
 		std::cout.flush();
+		std::cin >> msg_req.person_id;
 		if (in == "ls"){
 			inst_code = Input::LS;
 		} else {
 			inst_code = Input::RS;
 		}
+	}else if(in == "ws"){
+		inst_code = Input::WS;
+	}else if(in == "lo"){
+		inst_code = Input::LO;
+	}else if(in == "ro"){
+		inst_code = Input::RO;
+	}else if(in == "lc"){
+		inst_code = Input::LC;
+	}else if(in == "rc"){
+		inst_code = Input::RC;
+	}else if(in == "glu"){
+		inst_code = Input::GLU;
+	}else if(in == "gru"){
+		inst_code = Input::GRU;
+	}else if(in == "grl"){
+		inst_code = Input::GRL;
+	}else if(in == "gll"){
+		inst_code = Input::GLL;
 	}
+
+	msg_req.instruction = inst_code;
 
 	//message_request.instruction = inst_code;
 
