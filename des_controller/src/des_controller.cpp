@@ -32,11 +32,16 @@
  */
 void send_message(std::string msg){
 
+	std::cout << "Preparing message to display process: " << msg
+			<< "Size: " << sizeof(msg)<< std::endl;
+	std::cout.flush();
+
 	char message[400];     /* Message object to send data from the display */
 	memset(&message, 0, sizeof(message));
 	strcpy(message, msg.c_str());
 
-	std::cout << "Sending message to display process: " << message << std::endl;
+	std::cout << "Sending message to display process: " << message
+			<< "Size: " << sizeof(message)<< std::endl;
 	std::cout.flush();
 
 					/* Establish a connection */
@@ -92,15 +97,24 @@ int main(int argc, char* argv[]) {
 	std::cout << "The controller is running as process_id: " << getpid() << std::endl;
 	std::cout.flush();
 
-	system_status_t system_message;    /* Structure to hold the system information  */
+	system_status_t     system_message;    /* Structure to hold the system information  */
+	send_msg_request_t* message_request;
+	response_msg_t      response_message;
 
 	/* Clear the memory for the message and the response */
 	memset(&system_message, 0, sizeof(system_status_t));
+	memset(&message_request, 0, sizeof(send_msg_request_t));
+	memset(&response_message, 0, sizeof(response_msg_t));
 
-	send_msg_request_t* message_request;
-	response_msg_t      response_message;
-	char message[200]; /* Message object to receive and send data to client */
+	char message[400]; /* Message object to receive and send data to client */
 	memset(&message, 0, sizeof(message));
+
+
+	std::cout << "Preparing data structures for receiving data\n" <<
+			"Message: " << message
+			<< "Size: " << sizeof(message) <<
+			"\nSystem message size: "<< sizeof(system_status_t) << std::endl;
+	std::cout.flush();
 
 	/* Initialize system status */
 	system_message.system_state = -1;
@@ -123,8 +137,15 @@ int main(int argc, char* argv[]) {
     /* Program is active and ready to listen for instructions */
 	funcPointer(system_message); /* Update state to 'Start' */
 
+	std::cout << "Updated system message before start\n" <<
+			"Message: " << system_message.message
+			<< "Size: " << sizeof(system_message.message) <<
+			"\nSystem message size: "<< sizeof(system_message) << std::endl;
+	std::cout.flush();
+
     /* Send message to display to inform we are ready */
-    send_message(system_message.message);
+	std::string msg = system_message.message;
+    send_message(msg);
 
     /* Put server in an endless listening state */
     while (1)
@@ -158,8 +179,6 @@ int main(int argc, char* argv[]) {
 				break;
 
         	case Input::WS:
-				std::cout << "assigning function weight scan" << std::endl;
-				std::cout.flush();
 				funcPointer = &weight_scan;
 				break;
 
@@ -190,15 +209,11 @@ int main(int argc, char* argv[]) {
 				std::cout.flush();
 				funcPointer = &locked;
 				break;
-
         }
 
         /* Update state */
         funcPointer(system_message);
 
-        //system_message.message = "Testing";
-        std::cout << "Updated system message = " << system_message.message << std::endl;
-        std::cout.flush();
         response_message.status_code = SRVR_OK;
 
         /*
@@ -237,13 +252,8 @@ void scanning(system_status_t& ss){
 		std::cout << "You need to be on step 0 to use this command, exiting";
 		exit(0);
 	}
-	std::cout << "Scanning function called\n" << ss.message << std::endl;
-	std::cout.flush();
-
-	std::string msg = "Person scanned ID. ID = " + ss.person_id;
+	std::string msg = "Scanning func - Person scanned ID. ID = " + std::to_string(ss.person_id);
 	strcpy(ss.message, msg.c_str());
-	std::cout << "New message allocation\n" << ss.message << std::endl;
-	std::cout.flush();
 	ss.system_state = State::SCANNING_STATE;
 }
 

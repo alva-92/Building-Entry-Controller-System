@@ -27,7 +27,7 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 
 	/* Establish a connection */
 	int  coid;
-	char resp_msg [200]; 		     /* Response message buffer */
+	char resp_msg [400]; 		     /* Response message buffer */
 	memset( &resp_msg, 0, sizeof(resp_msg));
 
 	/*

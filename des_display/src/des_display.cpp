@@ -41,6 +41,7 @@ int main() {
 	std::cout.flush();
 
 	char message[400];     /* Message object to receive data from the controller */
+	memset(&message, 0, sizeof(message));
 
     /* Create a channel for the controller to connect to */
     chid = ChannelCreate(0);
