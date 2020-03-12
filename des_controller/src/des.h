@@ -8,37 +8,39 @@
 
 // TODO: Might need to create a person object to fulfill requirements
 
-#define NUM_INPUTS 11
-#define NUM_STATES 7
+#define NUM_INPUTS 12
+#define NUM_STATES 8
 
 typedef enum
 {
 	LS = 0,
-	RS,
-	WS,
-	LO,
-	RO,
-	LC,
-	RC,
-	GLU,
-	GRU,
-	GRL,
-	GLL,
+	RS = 1,
+	WS = 2,
+	LO = 3,
+	RO = 4,
+	LC = 5,
+	RC = 6,
+	GLU = 7,
+	GRU = 8,
+	GRL = 9,
+	GLL = 10,
+	EXT = 11,
 
 } Input;
 
-const char* INSTRUCTIONS[NUM_INPUTS] = {
-		"ls",
-		"rs",
-		"ws",
-		"lo",
-		"ro",
-		"lc",
-		"rc",
-		"gru",
-		"grl",
-		"gll",
-		"glu"
+const char* MESSAGES[NUM_INPUTS] = {
+		"Person scanned ID. ID = ",
+		"Person scanned ID. ID = ",
+		"Person weighed. Weight = ",
+		"Person opened left door",
+		"Person opened right door",
+		"Left door closed (automatically)",
+		"Right door closed (automatically)",
+		"Left door unlocked by Guard",
+		"Right door unlocked by Guard",
+		"Right door locked by Guard",
+		"Left door locked by Guard",
+		"Exit Program"
 };
 
 
@@ -51,6 +53,7 @@ typedef enum
 	OPENED_STATE      = 4,
 	WEIGHT_SCAN_STATE = 5,
 	CLOSED_STATE      = 6,
+	EXIT_STATE        = 7,
 
 } State;
 
@@ -60,6 +63,7 @@ typedef enum
 struct system_status {
 
 	int person_id;
+	int person_weight;
 	int system_state;
 	int current_step; /* The current step where the person is in the process */
 	char message[128]; /* Message to be displayed to the console */
@@ -71,9 +75,9 @@ struct system_status {
  */
 struct send_msg_request {
 
-	// Who is sending the instruction? What Instruction (ls, rs, etc.)
 	int person_id;
 	int instruction;
+	int extras;  /* For this application it holds the weight of the person */
 
 } typedef send_msg_request_t;
 
@@ -93,17 +97,18 @@ int chid;  /* Holds the channel ID */
 int rcvid; /* Key to delimit where the message came from (client) */
 int coid;
 int person_id;
+int terminate; /* Set to 1 to terminate the program */
 
 // TODO: Encapsulate this so only the controller modifies it based on inputs
 system_status_t system_status; /* Holds the status of the system - Shared among all programs */
 
 /* States */
-void start();
-void scanning();
-void locked();
-void unlocked();
-void opened();
-void weight_scan();
-void closed();
-
+void start(system_status_t&);
+void scanning(system_status_t&);
+void locked(system_status_t&);
+void unlocked(system_status_t&);
+void opened(system_status_t&);
+void weight_scan(system_status_t&);
+void closed(system_status_t&);
+void exit_program(system_status_t&);
 #endif

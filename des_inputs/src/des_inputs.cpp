@@ -27,10 +27,7 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 
 	/* Establish a connection */
 	int  coid;
-	char resp_msg [200]; 		     /* Response message buffer */
-	memset( &resp_msg, 0, sizeof(resp_msg));
 
-	msg_req.instruction = 7;
 	/*
 	 * @params
 	 * nd The node descriptor of the node (e.g. ND_LOCAL_NODE for the local node) on which the process that owns the channel is running; see “Node descriptors,” below.
@@ -39,8 +36,6 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 	 * index The lowest acceptable connection ID.
 	 * flags If flags contains _NTO_COF_CLOEXEC, the connection is closed when your process calls an exec
 	 */
-	std::cout << "Connecting to: " <<  serverpid << " Sending\n ID:" << msg_req.person_id << " Instruction: " << msg_req.instruction << std::endl;
-	std::cout.flush();
 	coid = ConnectAttach(ND_LOCAL_NODE, serverpid , 1, _NTO_SIDE_CHANNEL, 0);
 	if (coid == -1)
 	{
@@ -64,18 +59,24 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
      * a pointer to the reply message (rmsg), and
      * the size of the reply message (rbytes).
      */
-	if (MsgSend(coid, &msg_req, sizeof(send_msg_request_t), resp_msg, sizeof(response_msg_t)) == -1)
+    int return_code = -1;
+    return_code = MsgSend(coid, &msg_req, sizeof(send_msg_request_t), NULL, 0);
+	if (return_code == -1)
 	{
-		std::cout << "Failed to send the message" << std::endl;
+		// TODO: For future - Check for other error return codes
+		std::cout << "Failed to send the message to controller" << std::endl;
 		std::cout.flush();
 		exit(EXIT_FAILURE);
 	}
+	else if (return_code == 0)  /* Check that the message was transferred properly */
+	{
+		/* If controller received a termination request terminate input */
 
-	response_message = (response_msg_t*) resp_msg;
-
-	std::cout << "Input got response: " << response_message->status_code << std::endl;
-	std::cout.flush();
-
+		if (msg_req.instruction == Input::EXT)
+		{
+			terminate = 1;
+		}
+	}
 }
 
 void process_input(std::string in){
@@ -87,22 +88,43 @@ void process_input(std::string in){
 
 	response_msg_t* response_message;
 
-	//memset( response_message, 0, sizeof(response_msg_t));
-
 	int inst_code = -1;
 
-	// TODO: Update all other status codes e.g. rc, ws and validate data
 	if (in == "ls" || in == "rs"){
 		std::cout << "Enter the Person's ID:" << std::endl;
 		std::cout.flush();
+		std::cin >> msg_req.person_id;
 		if (in == "ls"){
 			inst_code = Input::LS;
 		} else {
 			inst_code = Input::RS;
 		}
+	}else if(in == "ws"){
+		std::cout << "Enter the Person's weight:" << std::endl;
+		std::cout.flush();
+		std::cin >> msg_req.extras;
+		inst_code = Input::WS;
+	}else if(in == "lo"){
+		inst_code = Input::LO;
+	}else if(in == "ro"){
+		inst_code = Input::RO;
+	}else if(in == "lc"){
+		inst_code = Input::LC;
+	}else if(in == "rc"){
+		inst_code = Input::RC;
+	}else if(in == "glu"){
+		inst_code = Input::GLU;
+	}else if(in == "gru"){
+		inst_code = Input::GRU;
+	}else if(in == "grl"){
+		inst_code = Input::GRL;
+	}else if(in == "gll"){
+		inst_code = Input::GLL;
+	}else if(in == "exit" || in == "EXIT"){
+		inst_code = Input::EXT;
 	}
 
-	//message_request.instruction = inst_code;
+	msg_req.instruction = inst_code;
 
 	send_message(msg_req, response_message);
 }
@@ -119,18 +141,22 @@ int main(int argc, char* argv[]) {
 	}
 
 	serverpid = atoi(argv[1]);
-	std::cout << "Enter the type of event: e (ls= left scan, rs= right scan, "
-			"ws= weight scale, lo =left open, ro=right open, "
-			"lc =left closed, rc = right closed , "
-			"gru = guard right unlock, grl = guard right lock, "
-			"gll=guard left lock, "
-			"glu = guard Left unlock)" << std::endl;
-	std::cout.flush();
 
-	std::string input;
-	std::cin >> input;
+	while (!terminate) {
+		std::cout << "Enter the event type: (ls = left scan, rs = right scan, "
+				"ws = weight scale, lo = left open, ro = right open, "
+				"lc = left closed, rc = right closed, "
+				"gru = guard right unlock, grl = guard right lock, "
+				"gll = guard left lock, "
+				"glu = guard Left unlock, exit = exit programs)" << std::endl;
 
-	process_input(input);
+		std::cout.flush();
+
+		std::string input;
+		std::cin >> input;
+
+		process_input(input);
+	}
 	return 0;
 }
 

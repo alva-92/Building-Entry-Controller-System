@@ -29,10 +29,9 @@
  * to it using a message from the des_controller program
  *
  */
-void print_message(int* code){
+void print_message(std::string msg){
 
-	// TODO: switch statement to map the code to the message
-	std::cout << "Display: " << *code << std::endl;
+	std::cout << "Display: " << msg << std::endl;
 	std::cout.flush();
 }
 
@@ -41,9 +40,8 @@ int main() {
 	std::cout << "The display is running as PID: " << getpid() << std::endl;
 	std::cout.flush();
 
-	int size = sizeof(int);
-	char message[size];     /* Message object to receive data from the controller */
-	int* code;
+	char message[400];     /* Message object to receive data from the controller */
+	memset(&message, 0, sizeof(message));
 
     /* Create a channel for the controller to connect to */
     chid = ChannelCreate(0);
@@ -71,9 +69,14 @@ int main() {
         	printf("Could not parse message");
         }
 
-        code = (int*) message;
-        //std::cout << "Display: " << *code << std::endl;
-        print_message(code);
+        // TODO: Remove the 'Display tag' once we are good/verified with provided screenshots
+        std::string m = MESSAGES[11];
+        if (m.compare(message)==0){
+        	terminate = 1;
+        }
+
+        std::cout << message << std::endl;
+        std::cout.flush();
 
         /*
          * No need to send any data back to the controller. Respond to unblock.
@@ -84,6 +87,11 @@ int main() {
         /* Alternatively, you can unblock with regular reply and choose to not send
          * data back. Standard shown in QNX documentation encourages MsgError for pass/fail responses */
         //MsgReply (rcvid, EOK, NULL, 0);
+
+        if (terminate){
+        	// TODO: Cleanup structures if needed
+        	exit(EXIT_SUCCESS);
+        }
     }
 
 										/* Phase 3 */
