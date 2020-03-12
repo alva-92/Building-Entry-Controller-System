@@ -70,12 +70,12 @@ int main() {
         }
 
         // TODO: Remove the 'Display tag' once we are good/verified with provided screenshots
-        std::string m = "Exit Display";
+        std::string m = MESSAGES[11];
         if (m.compare(message)==0){
         	terminate = 1;
         }
 
-        std::cout << "Display: " << message << std::endl;
+        std::cout << message << std::endl;
         std::cout.flush();
 
         /*

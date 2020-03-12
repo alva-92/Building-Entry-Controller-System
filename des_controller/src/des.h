@@ -28,18 +28,19 @@ typedef enum
 
 } Input;
 
-const char* INSTRUCTIONS[NUM_INPUTS] = {
-		"ls",
-		"rs",
-		"ws",
-		"lo",
-		"ro",
-		"lc",
-		"rc",
-		"gru",
-		"grl",
-		"gll",
-		"glu"
+const char* MESSAGES[NUM_INPUTS] = {
+		"Person scanned ID. ID = ",
+		"Person scanned ID. ID = ",
+		"Person weighed. Weight = ",
+		"Person opened left door",
+		"Person opened right door",
+		"Left door closed (automatically)",
+		"Right door closed (automatically)",
+		"Left door unlocked by Guard",
+		"Right door unlocked by Guard",
+		"Right door locked by Guard",
+		"Left door locked by Guard",
+		"Exit Program"
 };
 
 

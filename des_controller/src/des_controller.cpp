@@ -67,7 +67,7 @@ void send_message(std::string msg){
 	return_code = MsgSend(coid, &message, sizeof(message), NULL, 0);
     if (return_code == -1)
 	{
-		std::cout << "Failed to send the message." << std::endl;
+		std::cout << "Failed to send the message to display." << std::endl;
 		std::cout.flush();
 		exit(EXIT_FAILURE);
 	}
@@ -77,6 +77,7 @@ void send_message(std::string msg){
 
 		if (terminate)
 		{
+			MsgError(rcvid, EOK); /* Respond to the input */
 			std::cout << "Exiting Controller" << std::endl;
 			std::cout.flush();
 			exit(EXIT_SUCCESS);
@@ -167,43 +168,58 @@ int main(int argc, char* argv[]) {
 
         	case Input::WS:
 				funcPointer = &weight_scan;
+				system_message.current_step = message_request->instruction;
 				system_message.person_weight = message_request->extras;
 				break;
 
         	case Input::LO:
         	case Input::RO:
-				std::cout << "assigning function pointer to open" << std::endl;
-				std::cout.flush();
+        		system_message.current_step = message_request->instruction;
 				funcPointer = &opened;
 				break;
 
         	case Input::LC:
         	case Input::RC:
-				std::cout << "assigning function pointer to closed" << std::endl;
-				std::cout.flush();
+        		system_message.current_step = message_request->instruction;
 				funcPointer = &closed;
 				break;
 
         	case Input::GLU:
         	case Input::GRU:
-				std::cout << "assigning function pointer to guard unlocked" << std::endl;
-				std::cout.flush();
+        		system_message.current_step = message_request->instruction;
 				funcPointer = &unlocked;
 				break;
 
         	case Input::GRL:
         	case Input::GLL:
-				std::cout << "assigning function pointer to guard locked" << std::endl;
-				std::cout.flush();
+        		system_message.current_step = message_request->instruction;
 				funcPointer = &locked;
 				break;
         	case Input::EXT:
+        		system_message.current_step = message_request->instruction;
         		funcPointer = &exit_program;
         		break;
         }
 
         /* Update state */
         funcPointer(system_message);
+
+        /* Send message to display */
+        send_message(system_message.message);
+
+        // TODO: Optimize this is possible
+    	if (system_message.current_step == Input::GRL){
+
+    		/* Assign pointer to initial state */
+    		funcPointer = &start;
+
+    	    /* Program is active and ready to listen for instructions */
+    		funcPointer(system_message); /* Update state to 'Start' */
+
+    	    /* Send message to display to inform we are ready */
+    		std::string msg = system_message.message;
+    	    send_message(msg);
+    	}
 
         /*
          * No need to send any data back to the input. Respond to unblock.
@@ -214,9 +230,6 @@ int main(int argc, char* argv[]) {
         /* Alternatively, you can unblock with regular reply and choose to not send
          * data back. Standard shown in QNX documentation encourages MsgError for pass/fail responses */
         //MsgReply (rcvid, EOK, NULL, 0);
-
-        /* Send message to display */
-        send_message(system_message.message);
     }
 
 								/* Phase 3 */
@@ -227,11 +240,11 @@ int main(int argc, char* argv[]) {
 	return 0;
 }
 
-// TODO: Get messages from a header structure container all messages
 void start(system_status_t& ss){
 
 	std::string msg = "Waiting for person...";
 	strcpy(ss.message, msg.c_str());
+	ss.current_step = 0;
 	ss.system_state = State::START_STATE;
 }
 
@@ -241,7 +254,7 @@ void scanning(system_status_t& ss){
 		std::cout << "You need to be on step 0 to use this command, exiting";
 		exit(0);
 	}
-	std::string msg = "Person scanned ID. ID = " + std::to_string(ss.person_id);
+	std::string msg = MESSAGES[ss.current_step] + std::to_string(ss.person_id);
 	strcpy(ss.message, msg.c_str());
 	ss.system_state = State::SCANNING_STATE;
 }
@@ -249,39 +262,45 @@ void scanning(system_status_t& ss){
 void locked(system_status_t& ss){
 	if(ss.current_step == 0){
 			std::cout << "You need to be on step 1 or 2 to use this command, exiting";
+			std::cout.flush();
 			exit(0);
 		}
-	std::cout << "Locked function called\n";
-	std::cout.flush();
+	std::string msg = MESSAGES[ss.current_step];
+	strcpy(ss.message, msg.c_str());
+
 	ss.system_state = State::LOCKED_STATE;
 }
 
 void unlocked(system_status_t& ss){
-	std::cout << "Unlocked function called\n";
-	std::cout.flush();
+	std::string msg = MESSAGES[ss.current_step];
+	strcpy(ss.message, msg.c_str());
+
 	ss.system_state = State::UNLOCKED_STATE;
 }
 
 void opened(system_status_t& ss){
-	std::cout << "Opened function called" << std::endl;
-	std::cout.flush();
+	std::string msg = MESSAGES[ss.current_step];
+	strcpy(ss.message, msg.c_str());
+
 	ss.system_state = State::OPENED_STATE;
 }
 
 void weight_scan(system_status_t& ss){
-    std::string msg = "Person weighed, Weight = " + std::to_string(ss.person_weight);
+    std::string msg = MESSAGES[ss.current_step] + std::to_string(ss.person_weight);
 	strcpy(ss.message, msg.c_str());
+
 	ss.system_state = State::WEIGHT_SCAN_STATE;
 }
 
 void closed(system_status_t& ss){
-	std::cout << "Closed function called\n";
-	std::cout.flush();
+	std::string msg = MESSAGES[ss.current_step];
+	strcpy(ss.message, msg.c_str());
+
 	ss.system_state = State::CLOSED_STATE;
 }
 
 void exit_program(system_status_t& ss){
-	std::string msg = "Exit Display";
+	std::string msg = MESSAGES[11];
 	terminate = 1;
 	strcpy(ss.message, msg.c_str());
 	ss.system_state = State::EXIT_STATE;

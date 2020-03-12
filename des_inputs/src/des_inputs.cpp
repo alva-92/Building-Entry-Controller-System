@@ -64,7 +64,7 @@ void send_message(send_msg_request_t& msg_req, response_msg_t* response_message)
 	if (return_code == -1)
 	{
 		// TODO: For future - Check for other error return codes
-		std::cout << "Failed to send the message" << std::endl;
+		std::cout << "Failed to send the message to controller" << std::endl;
 		std::cout.flush();
 		exit(EXIT_FAILURE);
 	}
