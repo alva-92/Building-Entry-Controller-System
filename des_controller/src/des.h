@@ -57,6 +57,13 @@ typedef enum
 
 } State;
 
+typedef enum
+{
+	NONE  = 0,
+	LEFT  = 1,
+	RIGHT = 2,
+} Side;
+
 /**
  * Stores the system status information
  */
@@ -65,6 +72,9 @@ struct system_status {
 	int person_id;
 	int person_weight;
 	int system_state;
+	int locked_count;
+	bool id_scanned;
+	int current_side;
 	int current_step; /* The current step where the person is in the process */
 	char message[128]; /* Message to be displayed to the console */
 
