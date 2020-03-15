@@ -116,6 +116,9 @@ int main(int argc, char* argv[]) {
 	/* Initialize system status */
 	system_message.system_state = -1;
 	system_message.current_step = 0;
+	system_message.locked_count = 0;
+	system_message.id_scanned = false;
+	system_message.current_side = Side::NONE;
 
     /* Create a channel for the client to connect to */
     chid = ChannelCreate(0);
@@ -163,6 +166,7 @@ int main(int argc, char* argv[]) {
         	case Input::LS:
         	case Input::RS:
 				funcPointer = &scanning;
+				system_message.current_step = message_request->instruction;
 				system_message.person_id = message_request->person_id;
 				break;
 
@@ -203,12 +207,11 @@ int main(int argc, char* argv[]) {
 
         /* Update state */
         funcPointer(system_message);
-
         /* Send message to display */
         send_message(system_message.message);
 
         // TODO: Optimize this is possible
-    	if (system_message.current_step == Input::GRL){
+    	if ((system_message.current_step == Input::GRL || system_message.current_step == Input::GLL)){
 
     		/* Assign pointer to initial state */
     		funcPointer = &start;
@@ -241,8 +244,10 @@ int main(int argc, char* argv[]) {
 }
 
 void start(system_status_t& ss){
-
-	std::string msg = "Waiting for person...";
+	std::string msg = "";
+	if(ss.system_state != State::LOCKED_STATE || ss.locked_count == 2 ){
+		msg = "Waiting for person...";
+	}
 	strcpy(ss.message, msg.c_str());
 	ss.current_step = 0;
 	ss.system_state = State::START_STATE;
@@ -250,28 +255,55 @@ void start(system_status_t& ss){
 
 void scanning(system_status_t& ss){
 
-	if(ss.current_step != 0){
-		std::cout << "You need to be on step 0 to use this command, exiting";
+	if(ss.system_state != State::START_STATE && ss.id_scanned == false){
+		std::cout << "You need to be on state START and have not been already scanned to use this command, exiting" << std::endl;
 		exit(0);
+	}
+	if(ss.current_step == Input::LS){
+		ss.current_side = Side::LEFT;
+	}else if(ss.current_step == Input::RS){
+		ss.current_side = Side::RIGHT;
 	}
 	std::string msg = MESSAGES[ss.current_step] + std::to_string(ss.person_id);
 	strcpy(ss.message, msg.c_str());
 	ss.system_state = State::SCANNING_STATE;
+	ss.id_scanned = true;
 }
 
 void locked(system_status_t& ss){
-	if(ss.current_step == 0){
-			std::cout << "You need to be on step 1 or 2 to use this command, exiting";
-			std::cout.flush();
-			exit(0);
-		}
+	if(ss.system_state != State::CLOSED_STATE){
+		std::cout << "You need to be on state CLOSED to use this command, exiting" << std::endl;
+		std::cout.flush();
+		exit(0);
+	}
+	if((ss.current_side == Side::LEFT && ss.current_step == Input::GRL) ||
+			(ss.current_side == Side::RIGHT && ss.current_step == Input::GLL)){
+		std::cout << "You need to be on the same side as the function you are calling, exiting" << std::endl;
+		std::cout.flush();
+		exit(0);
+	}
 	std::string msg = MESSAGES[ss.current_step];
 	strcpy(ss.message, msg.c_str());
-
 	ss.system_state = State::LOCKED_STATE;
+	ss.locked_count++;
+	ss.current_side = NONE;
 }
 
 void unlocked(system_status_t& ss){
+	if(ss.system_state != State::SCANNING_STATE && ss.system_state != State::START_STATE){
+		std::cout << "You need to be on state SCANNING or START to use this command, exiting" << std::endl;
+		exit(0);
+	}
+	if((ss.current_side == Side::LEFT && ss.current_step == Input::GRU) ||
+			(ss.current_side == Side::RIGHT && ss.current_step == Input::GLU)){
+		std::cout << "You need to be on the same side as the function you are calling, exiting" << std::endl;
+		std::cout.flush();
+		exit(0);
+	}else if((ss.current_side == NONE && ss.id_scanned == false)){
+		std::cout << "You need to be scanned in before you unlock the door, exiting";
+		std::cout.flush();
+		exit(0);
+	}
 	std::string msg = MESSAGES[ss.current_step];
 	strcpy(ss.message, msg.c_str());
 
@@ -279,23 +311,44 @@ void unlocked(system_status_t& ss){
 }
 
 void opened(system_status_t& ss){
+	if(ss.system_state != State::UNLOCKED_STATE){
+		std::cout << "You need to be on state UNLOCKED to use this command, exiting" << std::endl;
+		exit(0);
+	}
+	if((ss.current_side == Side::LEFT && ss.current_step == Input::RO) ||
+			(ss.current_side == Side::RIGHT && ss.current_step == Input::LO)){
+		std::cout << "You need to be on the same side as the function you are calling, exiting" << std::endl;
+		std::cout.flush();
+		exit(0);
+	}
 	std::string msg = MESSAGES[ss.current_step];
 	strcpy(ss.message, msg.c_str());
-
 	ss.system_state = State::OPENED_STATE;
 }
 
 void weight_scan(system_status_t& ss){
+	if(ss.system_state != State::OPENED_STATE){
+		std::cout << "You need to be on state OPEN to use this command, exiting" << std::endl;
+		exit(0);
+	}
     std::string msg = MESSAGES[ss.current_step] + std::to_string(ss.person_weight);
 	strcpy(ss.message, msg.c_str());
-
 	ss.system_state = State::WEIGHT_SCAN_STATE;
 }
 
 void closed(system_status_t& ss){
+	if(ss.system_state != State::WEIGHT_SCAN_STATE && ss.system_state != State::OPENED_STATE){
+		std::cout << "You need to be on step 1, 2 or 3 to use this command, exiting" << std::endl;
+		exit(0);
+	}
+	if((ss.current_side == Side::LEFT && ss.current_step == Input::RC) ||
+			(ss.current_side == Side::RIGHT && ss.current_step == Input::LC)){
+		std::cout << "You need to be on the same side as the function you are calling, exiting" << std::endl;
+		std::cout.flush();
+		exit(0);
+	}
 	std::string msg = MESSAGES[ss.current_step];
 	strcpy(ss.message, msg.c_str());
-
 	ss.system_state = State::CLOSED_STATE;
 }
 
@@ -304,4 +357,6 @@ void exit_program(system_status_t& ss){
 	terminate = 1;
 	strcpy(ss.message, msg.c_str());
 	ss.system_state = State::EXIT_STATE;
+	ss.locked_count = 0;
+	ss.id_scanned = false;
 }
